@@ -1,682 +1,162 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuizSheet题库刷题应用</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <style>
-        body {
-            background-color: #ffffff;
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            margin: 0;
-            min-height: 100vh;
-        }
-        
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            display: flex;
-            gap: 20px;
-        }
-        
-        .main-content {
-            flex: 1;
-        }
-        
-        .question-list-panel {
-            width: 260px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            padding: 12px;
-            height: fit-content;
-            max-height: 600px;
-            overflow-y: auto;
-            flex-shrink: 0;
-            /* 滚动条样式优化 */
-            scrollbar-width: thin;
-            scrollbar-color: #adb5bd transparent;
-        }
-        
-        .question-list-panel::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .question-list-panel::-webkit-scrollbar-thumb {
-            background-color: #adb5bd;
-            border-radius: 3px;
-        }
-        
-        .question-list-header {
-            text-align: center;
-            margin-bottom: 10px;
-            font-weight: bold;
-            color: #495057;
-        }
-        
-        .question-list-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
-        }
-        
-        .question-list-item {
-            padding: 6px 0;
-            background-color: #e9ecef;
-            border-radius: 4px;
-            cursor: pointer;
-            text-align: center;
-            font-size: 13px;
-            transition: all 0.15s ease;
-            /* 支持键盘聚焦 */
-            outline: none;
-        }
-        
-        .question-list-item:hover,
-        .question-list-item:focus {
-            background-color: #dee2e6;
-            transform: scale(1.03);
-        }
-        
-        .question-list-item.active {
-            background-color: #007bff;
-            color: white;
-            font-weight: bold;
-        }
-        
-        .question-list-item.answered-correct {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        
-        .question-list-item.answered-incorrect {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        
-        h1 {
-            color: #333333;
-            text-align: center;
-            margin-top: 0;
-            margin-bottom: 20px;
-        }
-        
-        .upload-section, .quiz-section {
-            border: 1px solid #ddd;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        
-        .question-text {
-            color: #333333;
-            font-size: 18px;
-            margin-bottom: 15px;
-            line-height: 1.5;
-        }
-        
-        .options-container {
-            margin-bottom: 20px;
-        }
-        
-        .option-item {
-            margin: 10px 0;
-        }
-        
-        .option-input {
-            margin-right: 8px;
-        }
-        
-        button {
-            background-color: #007bff;
-            color: #ffffff;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin: 5px;
-        }
-        
-        button:hover {
-            background-color: #0056b3;
-        }
-        
-        button:disabled {
-            background-color: #6c757d;
-            cursor: not-allowed;
-        }
-        
-        .feedback {
-            font-size: 16px;
-            margin-top: 10px;
-            min-height: 24px;
-        }
-        
-        .correct {
-            color: #00ff00;
-        }
-        
-        .incorrect {
-            color: #ff0000;
-        }
-        
-        .navigation {
-            margin-top: 20px;
-            text-align: center;
-        }
-        
-        .result-section {
-            text-align: center;
-            padding: 20px;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
-        .progress-bar {
-            width: 100%;
-            background-color: #e0e0e0;
-            border-radius: 4px;
-            margin: 10px 0;
-        }
-        
-        .progress-fill {
-            height: 20px;
-            background-color: #007bff;
-            border-radius: 4px;
-            transition: width 0.3s ease;
-        }
-        
-        /* 移动端适配 */
-        @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-            }
-            .question-list-panel {
-                width: 100%;
-                max-height: 200px;
-            }
-            .question-list-grid {
-                grid-template-columns: repeat(10, 1fr);
-            }
-            .question-list-item {
-                font-size: 11px;
-                padding: 4px 0;
-            }
-        }
-        
-        /* 上传区域样式调整 */
-        .file-upload-area {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 15px 0;
-        }
-        
-        #fileInput {
-            flex: 1;
-        }
-    </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#2563eb">
+    <title>QuizSheet 离线刷题</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="vendor/xlsx.full.min.js"></script>
+    <script src="app.js" defer></script>
 </head>
 <body>
-    <!-- 文件上传区域 -->
-    <div id="uploadSection" class="upload-section">
-        <h1>QuizSheet题库刷题应用</h1>
-        <h2>上传题库文件</h2>
-        <p>请上传.xlsx格式的题库文件</p>
-        <div class="file-upload-area">
-            <input type="file" id="fileInput" accept=".xlsx" />
-            <button onclick="loadFile()">加载题库</button>
+    <header class="site-header">
+        <div class="header-inner">
+            <a class="brand" href="index.html" aria-label="QuizSheet 首页">QuizSheet</a>
+            <span class="offline-badge">本地离线运行</span>
         </div>
-    </div>
-    
-    <!-- 测试区域 -->
-    <div id="quizAppContainer" class="hidden">
-        <div class="container">
-            <div class="question-list-panel" id="questionListPanel"></div>
-            <div class="main-content">
-                <div id="quizSection" class="quiz-section">
-                    <div class="progress-bar">
-                        <div id="progressFill" class="progress-fill" style="width: 0%"></div>
-                    </div>
-                    <div id="questionDisplay"></div>
-                    <div id="feedbackDisplay" class="feedback"></div>
-                    <div class="navigation">
-                        <button id="prevBtn" onclick="prevQuestion()">上一题</button>
-                        <button id="skipBtn" onclick="skipQuestion()">跳过</button>
-                        <button id="nextBtn" onclick="nextQuestion()">下一题</button>
-                        <button id="submitBtn" onclick="submitAnswer()" class="hidden">提交答案</button>
-                    </div>
+    </header>
+
+    <main>
+        <section id="uploadSection" class="panel upload-panel" aria-labelledby="uploadTitle">
+            <p class="eyebrow">Excel 一键变题库</p>
+            <h1 id="uploadTitle" tabindex="-1">简单、私密的离线刷题工具</h1>
+            <p class="lead">题库只在当前浏览器中处理，不上传、不注册，也无需安装任何软件。</p>
+
+            <div class="upload-box">
+                <input id="fileInput" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+                <label class="file-picker" for="fileInput">
+                    <span>选择 Excel 题库</span>
+                    <small>支持 .xlsx 文件</small>
+                </label>
+
+                <label class="field" for="modeSelect">
+                    <span>练习方式</span>
+                    <select id="modeSelect">
+                        <option value="sequential">顺序练习</option>
+                        <option value="random">随机题序</option>
+                    </select>
+                </label>
+
+                <button id="loadButton" class="primary-button" type="button">加载题库</button>
+            </div>
+
+            <div id="importReport" class="import-report hidden" role="status" aria-live="polite"></div>
+
+            <details id="sessionSettings" class="session-settings hidden">
+                <summary>更多练习设置</summary>
+                <div class="settings-grid">
+                    <label class="field" for="questionCountSelect">
+                        <span>本次题量</span>
+                        <select id="questionCountSelect"><option value="all">全部题目</option></select>
+                    </label>
+                    <label class="field" for="categorySelect">
+                        <span>分类</span>
+                        <select id="categorySelect"><option value="all">全部分类</option></select>
+                    </label>
+                    <label class="field" for="difficultySelect">
+                        <span>难度</span>
+                        <select id="difficultySelect"><option value="all">全部难度</option></select>
+                    </label>
+                    <label class="check-field" for="shuffleOptionsInput">
+                        <input id="shuffleOptionsInput" type="checkbox">
+                        <span>随机选项顺序</span>
+                    </label>
+                    <label class="check-field" for="autoAdvanceInput">
+                        <input id="autoAdvanceInput" type="checkbox">
+                        <span>答题后自动进入下一题</span>
+                    </label>
+                    <label class="field" for="wrongDelayInput">
+                        <span>答错停留时间（秒）</span>
+                        <input id="wrongDelayInput" class="number-input" type="number" min="0" max="5" step="0.5" value="3" disabled>
+                    </label>
                 </div>
-                
-                <!-- 结果显示区域 -->
-                <div id="resultSection" class="result-section hidden">
-                    <h2>测试完成！</h2>
-                    <p id="scoreDisplay"></p>
-                    <button onclick="restartQuiz()">重新开始</button>
+                <p class="settings-note">开启后，单选和判断题选择即提交；多选题仍需手动提交。答错停留时间可设置为 0–5 秒。</p>
+            </details>
+
+            <details class="format-help">
+                <summary>查看 Excel 格式要求</summary>
+                <div class="table-scroll">
+                    <table>
+                        <thead><tr><th>题目</th><th>题型</th><th>答案</th><th>A～H</th><th>可选列</th></tr></thead>
+                        <tbody><tr><td>题干内容</td><td>单选题 / 多选题 / 判断题</td><td>A、AB、A,B、正确、错误</td><td>选项文字</td><td>解析、分类、难度</td></tr></tbody>
+                    </table>
+                </div>
+                <p>列名允许首尾空格；答案兼容中英文逗号、空格和小写字母。程序读取第一个工作表。</p>
+            </details>
+        </section>
+
+        <section id="quizSection" class="quiz-shell hidden" aria-label="答题区域">
+            <div class="quiz-toolbar">
+                <div>
+                    <strong id="libraryName">题库</strong>
+                    <span id="modeBadge" class="mode-badge"></span>
+                    <span id="saveStatus" class="save-status">已自动保存</span>
+                </div>
+                <div class="toolbar-actions">
+                    <button id="changeFileButton" class="text-button" type="button">更换题库</button>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <script>
-        // ========== 工具函数 ==========
-        /**
-         * HTML 转义，防止 XSS
-         */
-        function escapeHtml(text) {
-            if (typeof text !== 'string') return String(text);
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+            <div class="quiz-layout">
+                <aside class="question-nav" aria-label="题目导航">
+                    <div class="nav-header">
+                        <strong>题目列表</strong>
+                        <span id="answeredSummary">0 / 0</span>
+                    </div>
+                    <div id="questionGrid" class="question-grid"></div>
+                    <div class="legend" aria-label="题目状态说明">
+                        <span><i class="dot current-dot"></i>当前</span>
+                        <span><i class="dot correct-dot"></i>正确</span>
+                        <span><i class="dot incorrect-dot"></i>错误</span>
+                    </div>
+                </aside>
 
-        // ========== 题库解析 ==========
-        let questions = [];
-        let currentQuestionIndex = 0;
-        let userAnswers = [];
-        let questionStatus = []; // 'unanswered', 'correct', 'incorrect'
-
-        // 智能解析正确答案（支持 "ABCD" 和 "A,B,C,D" 两种格式）
-        function parseCorrectAnswer(answerStr) {
-            const str = String(answerStr).trim();
-            if (str.includes(',')) {
-                return str.split(',').map(s => s.trim()).filter(s => s !== '');
-            }
-            return str.split('').filter(c => /^[A-Z]$/.test(c));
-        }
-
-        // 加载文件函数
-        function loadFile() {
-            const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
-            
-            if (!file) {
-                alert('请选择一个文件');
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, {type: 'array'});
-                    
-                    if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
-                        alert('无效的 Excel 文件：未找到工作表');
-                        return;
-                    }
-                    
-                    // 假设题库在第一个工作表中
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                    
-                    if (jsonData.length === 0) {
-                        alert('题库文件内容为空');
-                        return;
-                    }
-                    
-                    // 解析题库数据
-                    parseQuestions(jsonData);
-                    
-                    if (questions.length === 0) {
-                        alert('未能解析出有效题目，请检查题库格式');
-                        return;
-                    }
-                    
-                    // 初始化状态
-                    userAnswers = new Array(questions.length).fill(null);
-                    questionStatus = new Array(questions.length).fill('unanswered');
-                    
-                    // 显示测试区域
-                    document.getElementById('uploadSection').classList.add('hidden');
-                    document.getElementById('quizAppContainer').classList.remove('hidden');
-                    
-                    // 生成题目列表
-                    generateQuestionList();
-                    
-                    // 显示第一题
-                    showCurrentQuestion();
-                } catch (error) {
-                    console.error('解析错误:', error);
-                    alert('解析文件失败: ' + (error.message || '未知错误'));
-                }
-            };
-            
-            reader.onerror = function() {
-                alert('读取文件失败');
-            };
-            
-            reader.readAsArrayBuffer(file);
-        }
-
-        // 解析题库数据
-        function parseQuestions(data) {
-            questions = [];
-            
-            for (let i = 0; i < data.length; i++) {
-                const row = data[i];
-                
-                if (!row || !row.题目 || !row.题型 || !row.答案) {
-                    console.warn(`第${i+1}行数据不完整，跳过`);
-                    continue;
-                }
-                
-                const questionType = String(row.题型).trim();
-                const questionText = String(row.题目).trim();
-                const correctAnswerArray = parseCorrectAnswer(row.答案);
-                
-                let type = '';
-                if (questionType.includes('单选')) {
-                    type = '单选';
-                } else if (questionType.includes('多选')) {
-                    type = '多选';
-                } else if (questionType.includes('判断')) {
-                    type = '单选';
-                } else {
-                    console.warn(`未知题目类型: ${questionType}，跳过`);
-                    continue;
-                }
-                
-                const options = [];
-                const optionKeys = ['A', 'B', 'C', 'D', 'E', 'F'];
-                
-                for (const key of optionKeys) {
-                    if (row[key] !== undefined && row[key] !== null && row[key] !== '') {
-                        options.push({
-                            key: key,
-                            value: String(row[key]).trim()
-                        });
-                    }
-                }
-                
-                // 判断题特殊处理
-                if (questionType.includes('判断') && options.length === 0) {
-                    options.push({key: 'A', value: '正确'});
-                    options.push({key: 'B', value: '错误'});
-                    if (correctAnswerArray.length === 0) {
-                        const origAns = String(row.答案).trim();
-                        if (['正确', '对', '√'].includes(origAns)) {
-                            correctAnswerArray.push('A');
-                        } else if (['错误', '错', '×'].includes(origAns)) {
-                            correctAnswerArray.push('B');
-                        }
-                    }
-                }
-                
-                if (options.length === 0) {
-                    console.warn(`第${i+1}行没有选项，跳过`);
-                    continue;
-                }
-                
-                const validAnswer = correctAnswerArray.every(ans => 
-                    options.some(opt => opt.key === ans)
-                );
-                if (!validAnswer) {
-                    console.warn(`第${i+1}题的正确答案包含无效选项，跳过`);
-                    continue;
-                }
-                
-                questions.push({
-                    type: type,
-                    text: questionText,
-                    options: options,
-                    correctAnswer: correctAnswerArray
-                });
-            }
-        }
-
-        // ========== 题目列表 ==========
-        function generateQuestionList() {
-            const panel = document.getElementById('questionListPanel');
-            panel.innerHTML = '<div class="question-list-header">题目列表</div><div class="question-list-grid" id="questionListGrid"></div>';
-            
-            const grid = document.getElementById('questionListGrid');
-            
-            questions.forEach((_, index) => {
-                const item = document.createElement('div');
-                item.className = 'question-list-item';
-                item.textContent = index + 1;
-                item.dataset.index = index;
-                item.tabIndex = 0; // 支持键盘导航
-                
-                item.addEventListener('click', () => {
-                    currentQuestionIndex = index;
-                    showCurrentQuestion();
-                });
-                
-                // 键盘支持
-                item.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        currentQuestionIndex = index;
-                        showCurrentQuestion();
-                    }
-                });
-                
-                grid.appendChild(item);
-            });
-        }
-
-        function updateQuestionListStyle() {
-            const items = document.querySelectorAll('.question-list-item');
-            items.forEach((item, index) => {
-                item.classList.remove('active', 'answered-correct', 'answered-incorrect');
-                
-                if (index === currentQuestionIndex) {
-                    item.classList.add('active');
-                } else if (questionStatus[index] === 'correct') {
-                    item.classList.add('answered-correct');
-                } else if (questionStatus[index] === 'incorrect') {
-                    item.classList.add('answered-incorrect');
-                }
-            });
-        }
-
-        // ========== 题目展示 ==========
-        function showCurrentQuestion() {
-            if (currentQuestionIndex >= questions.length) {
-                finishQuiz();
-                return;
-            }
-            
-            const question = questions[currentQuestionIndex];
-            const questionDisplay = document.getElementById('questionDisplay');
-            const feedbackDisplay = document.getElementById('feedbackDisplay');
-            const prevBtn = document.getElementById('prevBtn');
-            const nextBtn = document.getElementById('nextBtn');
-            const submitBtn = document.getElementById('submitBtn');
-            const skipBtn = document.getElementById('skipBtn');
-            
-            // 更新进度条
-            updateProgressBar();
-            
-            // 清空反馈
-            feedbackDisplay.innerHTML = '';
-            feedbackDisplay.className = 'feedback';
-            
-            // 构建题目 HTML（使用 escapeHtml 防 XSS）
-            let html = `
-                <div class="question-text">
-                    <strong>第${currentQuestionIndex + 1}题 (${escapeHtml(question.type)})</strong><br>
-                    ${escapeHtml(question.text)}
-                </div>
-                <div class="options-container">
-            `;
-            
-            if (question.type === '单选') {
-                for (const option of question.options) {
-                    const isChecked = userAnswers[currentQuestionIndex] === option.key;
-                    html += `
-                        <div class="option-item">
-                            <input type="radio" id="opt_${currentQuestionIndex}_${option.key}" 
-                                   name="q_${currentQuestionIndex}" value="${option.key}" 
-                                   class="option-input" ${isChecked ? 'checked' : ''}>
-                            <label for="opt_${currentQuestionIndex}_${option.key}">
-                                ${escapeHtml(option.key)}. ${escapeHtml(option.value)}
-                            </label>
+                <article class="question-card">
+                    <div class="progress-row">
+                        <span id="progressText">第 1 题，共 1 题</span>
+                        <div class="progress-track" role="progressbar" aria-label="答题进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                            <div id="progressFill" class="progress-fill"></div>
                         </div>
-                    `;
-                }
-                submitBtn.classList.add('hidden');
-            } else if (question.type === '多选') {
-                const selectedOptions = userAnswers[currentQuestionIndex] || [];
-                for (const option of question.options) {
-                    const isChecked = Array.isArray(selectedOptions) && selectedOptions.includes(option.key);
-                    html += `
-                        <div class="option-item">
-                            <input type="checkbox" id="opt_${currentQuestionIndex}_${option.key}" 
-                                   class="option-input multi-select" name="q_${currentQuestionIndex}" value="${option.key}" 
-                                   ${isChecked ? 'checked' : ''}>
-                            <label for="opt_${currentQuestionIndex}_${option.key}">
-                                ${escapeHtml(option.key)}. ${escapeHtml(option.value)}
-                            </label>
-                        </div>
-                    `;
-                }
-                submitBtn.classList.remove('hidden');
-                // 动态控制提交按钮状态
-                setTimeout(() => {
-                    const checkboxes = document.querySelectorAll(`input[name="q_${currentQuestionIndex}"]`);
-                    const toggleSubmitBtn = () => {
-                        const checkedCount = document.querySelectorAll(`input[name="q_${currentQuestionIndex}"]:checked`).length;
-                        submitBtn.disabled = checkedCount === 0;
-                    };
-                    checkboxes.forEach(cb => {
-                        // 移除可能的旧监听器（避免重复绑定）
-                        cb.removeEventListener('change', toggleSubmitBtn);
-                        cb.addEventListener('change', toggleSubmitBtn);
-                    });
-                    toggleSubmitBtn();
-                }, 0);
-            }
-            
-            html += '</div>';
-            questionDisplay.innerHTML = html;
-            
-            // 控制导航按钮
-            prevBtn.disabled = currentQuestionIndex === 0;
-            nextBtn.disabled = currentQuestionIndex === questions.length - 1;
-            skipBtn.disabled = currentQuestionIndex === questions.length - 1;
-            
-            // 更新题目列表高亮
-            updateQuestionListStyle();
-            
-            // 重新绑定单选事件
-            if (question.type === '单选') {
-                const radios = document.querySelectorAll(`input[name="q_${currentQuestionIndex}"]`);
-                const handleChange = (e) => {
-                    userAnswers[currentQuestionIndex] = e.target.value;
-                    checkAnswerAndProceed();
-                };
-                radios.forEach(radio => {
-                    radio.removeEventListener('change', handleChange); // 避免重复绑定
-                    radio.addEventListener('change', handleChange);
-                });
-            }
-        }
+                    </div>
 
-        // ========== 答题逻辑 ==========
-        function submitAnswer() {
-            const checkboxes = document.querySelectorAll(`input[name="q_${currentQuestionIndex}"]:checked`);
-            const selectedValues = Array.from(checkboxes).map(cb => cb.value);
-            userAnswers[currentQuestionIndex] = selectedValues;
-            checkAnswerAndProceed();
-        }
+                    <div id="questionScroll" class="question-scroll" tabindex="0">
+                        <div id="questionContent"></div>
+                        <p id="answerError" class="answer-error hidden" role="alert">请先选择一个答案</p>
+                        <div id="feedback" class="feedback hidden" aria-live="polite"></div>
+                    </div>
 
-        function checkAnswerAndProceed() {
-            const question = questions[currentQuestionIndex];
-            const userAnswer = userAnswers[currentQuestionIndex];
-            const correctAnswerArray = question.correctAnswer;
-            let isCorrect = false;
-            
-            if (question.type === '单选') {
-                isCorrect = userAnswer === (correctAnswerArray.length > 0 ? correctAnswerArray[0] : '');
-            } else if (question.type === '多选') {
-                const correctSorted = [...correctAnswerArray].sort();
-                const userSorted = Array.isArray(userAnswer) ? [...userAnswer].sort() : [];
-                isCorrect = 
-                    correctSorted.length === userSorted.length &&
-                    correctSorted.every((val, idx) => val === userSorted[idx]);
-            }
-            
-            questionStatus[currentQuestionIndex] = isCorrect ? 'correct' : 'incorrect';
-            updateQuestionListStyle();
-            
-            const feedbackDisplay = document.getElementById('feedbackDisplay');
-            const correctAnswerDisplay = correctAnswerArray.join(',');
-            feedbackDisplay.innerHTML = isCorrect ? 
-                `回答正确！正确答案是：${escapeHtml(correctAnswerDisplay)}` : 
-                `回答错误！正确答案是：${escapeHtml(correctAnswerDisplay)}`;
-            feedbackDisplay.className = `feedback ${isCorrect ? 'correct' : 'incorrect'}`;
-            
-            // 自动前进
-            setTimeout(() => {
-                if (currentQuestionIndex < questions.length - 1) {
-                    currentQuestionIndex++;
-                    showCurrentQuestion();
-                } else {
-                    finishQuiz();
-                }
-            }, isCorrect ? 500 : 3000);
-        }
+                    <div class="question-actions">
+                        <button id="prevButton" class="secondary-button" type="button" title="上一题（←）">上一题</button>
+                        <span class="shortcut-hint">A–H 选择 · Enter 操作</span>
+                        <button id="dontKnowButton" class="text-button" type="button">不会，查看答案</button>
+                        <button id="primaryActionButton" class="primary-button" type="button" title="提交答案或进入下一题（Enter）">提交答案</button>
+                    </div>
+                </article>
+            </div>
+        </section>
 
-        // ========== 导航 ==========
-        function nextQuestion() {
-            if (currentQuestionIndex < questions.length - 1) {
-                currentQuestionIndex++;
-                showCurrentQuestion();
-            }
-        }
+        <section id="resultSection" class="panel result-panel hidden" aria-labelledby="resultTitle">
+            <p class="eyebrow">练习完成</p>
+            <h1 id="resultTitle" tabindex="-1">本次成绩</h1>
+            <div id="scoreRing" class="score-ring"><strong id="scoreValue">0</strong><span>分</span></div>
+            <div id="resultStats" class="result-stats"></div>
+            <div id="categoryBreakdown" class="category-breakdown hidden"></div>
+            <details id="resultDetails" class="result-details hidden">
+                <summary>查看错题详情</summary>
+                <div id="resultReviewList" class="result-review-list"></div>
+            </details>
+            <div class="result-actions">
+                <button id="retryWrongButton" class="primary-button" type="button">重练错题</button>
+                <button id="retryStarredButton" class="secondary-button" type="button">复习存疑</button>
+                <button id="restartButton" class="secondary-button" type="button">重新练习</button>
+                <button id="resultChangeFileButton" class="text-button" type="button">选择其他题库</button>
+            </div>
+        </section>
+    </main>
 
-        function prevQuestion() {
-            if (currentQuestionIndex > 0) {
-                currentQuestionIndex--;
-                showCurrentQuestion();
-            }
-        }
+    <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
-        function skipQuestion() {
-            if (currentQuestionIndex < questions.length - 1) {
-                currentQuestionIndex++;
-                showCurrentQuestion();
-            }
-        }
-
-        // ========== 完成与重启 ==========
-        function finishQuiz() {
-            const correctCount = questionStatus.filter(status => status === 'correct').length;
-            document.getElementById('quizSection').classList.add('hidden');
-            document.getElementById('resultSection').classList.remove('hidden');
-            
-            const scoreDisplay = document.getElementById('scoreDisplay');
-            scoreDisplay.innerHTML = `
-                总题数: ${questions.length}<br>
-                答对题数: ${correctCount}<br>
-                得分: ${(correctCount / questions.length * 100).toFixed(1)}%
-            `;
-        }
-
-        function restartQuiz() {
-            currentQuestionIndex = 0;
-            userAnswers = new Array(questions.length).fill(null);
-            questionStatus = new Array(questions.length).fill('unanswered');
-            
-            document.getElementById('resultSection').classList.add('hidden');
-            document.getElementById('quizSection').classList.remove('hidden');
-            
-            updateQuestionListStyle();
-            showCurrentQuestion();
-        }
-
-        // ========== 进度条 ==========
-        function updateProgressBar() {
-            const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
-            document.getElementById('progressFill').style.width = `${progress}%`;
-        }
-    </script>
+    <footer>QuizSheet · 数据仅保存在你的浏览器中</footer>
 </body>
 </html>
